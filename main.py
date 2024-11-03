@@ -1,7 +1,7 @@
-import csv
-
 # CSV file by: Nandini Bansal, Public Domain, via Kaggle.com 
 # https://www.kaggle.com/datasets/nandini1999/perfume-recommendation-dataset?resource=download
+
+import csv
 
 filename = 'fragrance_data.csv'
 fragrances = []
@@ -20,10 +20,17 @@ def get_frags(filename):
 
 fragrances = get_frags(filename)
 
-def get_fragrance(fragrances, name):
+def get_fragrance_by_name(fragrances, name):
     matching_fragrances = []
     for fragrance in fragrances:
         if name.strip().lower() in fragrance["name"].strip().lower():
+            matching_fragrances.append(fragrance)
+    return matching_fragrances
+
+def get_fragrance_by_note(fragrances, note):
+    matching_fragrances = []
+    for fragrance in fragrances:
+        if note.strip().lower() in fragrance["scent_note"].strip().lower():
             matching_fragrances.append(fragrance)
     return matching_fragrances
 
@@ -43,14 +50,15 @@ def print_welcome():
     print("This program helps you find note and brand information for fragrances.")
 
 def print_help():
-    print("\nHelp:")
-    print("Enter a fragrance name to get information such as notes and brand.")
+    print("=" * 50)
+    print(" ABOUT US ".center(50, "-"))
+    print("=" * 50)
+    print("\nYou can search for fragrances by name or by scent notes.")
     print("The program displays up to five matching fragrances at a time.")
     print("If no matches are found, try different keywords.\n")
-    print("Note: This program uses a dataset, so the results are limited.")
+    print("Note: This program uses a dataset, so the results are limited, and may take time to load.")
 
 def main():
-
     print_welcome()
 
     while True:
@@ -64,29 +72,48 @@ def main():
         if action != 'go':
             print("Invalid input. Please type 'go' to start, 'help' for more info, or 'exit' to quit.")
             continue
+
         while True:
-            perfume_name = input("Enter the perfume name (or type 'exit' to quit): ")
-            if perfume_name.lower() == 'exit':
+            search_type = input("\nType '1' to search by note, '2' for name, or type 'exit' to quit): ").strip().lower()
+            if search_type == 'exit':
                 print("Thank you for using the perfume recommendation program!")
-                break
-            matching_fragrances = get_fragrance(fragrances, perfume_name)
+                return
+
+            if search_type == '2':
+                perfume_name = input("Enter the perfume name (or type 'back' to go to main menu): ")
+                if perfume_name.lower() == 'back':
+                    break
+                matching_fragrances = get_fragrance_by_name(fragrances, perfume_name)
+            elif search_type == '1':
+                note_option = input("Enter a scent note to see available options (or type 'back' to go to main menu): ").strip().lower()
+                if note_option == 'back':
+                    break
+                matching_fragrances = get_fragrance_by_note(fragrances, note_option)
+            else:
+                print("Invalid input. Please type '1' for note, or '2' for name.")
+                continue
+
             if matching_fragrances:
                 for i in range(0, len(matching_fragrances), 5):
-                    batch = matching_fragrances[i:i + 5] # split
+                    batch = matching_fragrances[i:i + 5]
                     for selected_fragrance in batch:
                         display_fragrance(selected_fragrance)
                     if i + 5 < len(matching_fragrances):
-                        more = input("Do you want to see more results? (yes/no): ").strip().lower()
-                        if more != 'yes':
+                        more = input("Do you want to see more results? (yes/no or type 'back' to main menu): ").strip().lower()
+                        if more == 'back':
                             break
-                    else:
-                        print("No more results to display.")
+                        elif more != 'yes':
+                            break
+                else:
+                    print("No more results to display.")
             else:
-                print("No fragrances found containing that input. Please try again.")
+                print("No fragrances found with that input. Please try again.")
+
             look_again = input("Do you want to look up another perfume? (yes/no): ").strip().lower()
             if look_again != 'yes':
                 print("Thank you for using the perfume recommendation program!")
-                break
+                return
+
 
 if __name__ == "__main__":
     main()
