@@ -23,11 +23,13 @@ job (string): User's job title
 Example call, JSON data to update profile and send a POST request to update profile data:
 
 data = {
+    
     "name": "celia",
     "email": "celia@example.com",
     "phone": "123-456-7890",
     "country": "USA",
     "job": "plumber"
+
 }
 response = requests.post('http://localhost:5000/profile', json=data)
 print(response.json()) 
