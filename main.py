@@ -2,118 +2,138 @@
 # https://www.kaggle.com/datasets/nandini1999/perfume-recommendation-dataset?resource=download
 
 import csv
+import time
+import os
 
-filename = 'fragrance_data.csv'
-fragrances = []
+SEARCH_SEND_FILE = 'microservices/search_microservice/send.csv'
+SEARCH_RESPONSE_FILE = 'microservices/search_microservice/response_search.csv'
 
-def get_frags(filename):
-    perfume_database = []
-    with open(filename, mode='r', encoding='utf-8') as file:
-        reader = csv.DictReader(file)
+IMAGE_DESC_SEND_FILE = 'microservices/image_desc_microservice/send.csv'
+IMAGE_DESC_RESPONSE_FILE = 'microservices/image_desc_microservice/response_image_desc.csv'
+
+COMPARE_SEND_FILE = 'microservices/compare_microservice/send.csv'
+COMPARE_RESPONSE_FILE = 'microservices/compare_microservice/response_compare.csv'
+
+SEASON_SEND_FILE = 'microservices/season_microservice/season_request.csv'
+SEASON_RESPONSE_FILE = 'microservices/season_microservice/recommendations.csv'
+
+def write_to_send_csv(send_file, data):
+    """write data to csv"""
+    with open(send_file, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerow(data) 
+
+def read_from_response_csv(response_file):
+    """get response from csv"""
+    result = []
+    with open(response_file, mode='r', encoding='utf-8') as file:
+        reader = csv.reader(file)
+        next(reader)
         for row in reader:
-            perfume_database.append({
-                "name": row["Name"],
-                "brand": row["Brand"],
-                "scent_note": row["Notes"].strip(),
-            })
-    return perfume_database
+            result.append(row)
+    return result
 
-fragrances = get_frags(filename)
+def search_service(query, search_type):
+    """search microservice, by frag notes or by name"""
+    write_to_send_csv(SEARCH_SEND_FILE, [search_type, query])
+    time.sleep(6)
+    return read_from_response_csv(SEARCH_RESPONSE_FILE)
 
-def get_fragrance_by_name(fragrances, name):
-    matching_fragrances = []
-    for fragrance in fragrances:
-        if name.strip().lower() in fragrance["name"].strip().lower():
-            matching_fragrances.append(fragrance)
-    return matching_fragrances
+def image_desc_service(fragrance_name):
+    """run image/description microservice"""
+    write_to_send_csv(IMAGE_DESC_SEND_FILE, ["image_desc", fragrance_name])
+    time.sleep(8)
+    return read_from_response_csv(IMAGE_DESC_RESPONSE_FILE)
 
-def get_fragrance_by_note(fragrances, note):
-    matching_fragrances = []
-    for fragrance in fragrances:
-        if note.strip().lower() in fragrance["scent_note"].strip().lower():
-            matching_fragrances.append(fragrance)
-    return matching_fragrances
+def compare_service(name1, name2):
+    """run the comparison microservice"""
+    write_to_send_csv(COMPARE_SEND_FILE, ["compare", name1, name2])
+    time.sleep(6)
+    return read_from_response_csv(COMPARE_RESPONSE_FILE)
 
-def display_fragrance(fragrance):
-    if fragrance:
-        print()
-        print(f"Fragrance: {fragrance['name']}")
-        print(f"Brand: {fragrance['brand']}")
-        print(f"Notes: {fragrance['scent_note']}")
-        print()
-
-def print_welcome():
-    print("=" * 50)
-    print(" WELCOME TO THE PERFUME RECOMMENDATION PROGRAM ".center(50, "-"))
-    print("=" * 50)
-    print("\nDiscover your next signature scent!\n")
-    print("This program helps you find note and brand information for fragrances.")
-
-def print_help():
-    print("=" * 50)
-    print(" ABOUT US ".center(50, "-"))
-    print("=" * 50)
-    print("\nYou can search for fragrances by name or by scent notes.")
-    print("The program displays up to five matching fragrances at a time.")
-    print("If no matches are found, try different keywords.\n")
-    print("Note: This program uses a dataset, so the results are limited, and may take time to load.")
+def season_service(season_selected):
+    """run the season recommendation microservice"""
+    write_to_send_csv(SEASON_SEND_FILE, [season_selected])
+    time.sleep(6)
+    return read_from_response_csv(SEASON_RESPONSE_FILE)
 
 def main():
-    print_welcome()
-
+    print("Welcome to the Fragrance Program!")
     while True:
-        action = input("Type 'go' to start searching for fragrances, 'help' for assistance, or 'exit' to quit the program: ").strip().lower()
-        if action == 'exit':
-            print("Thank you for using the perfume recommendation program!")
-            break
-        if action == 'help':
-            print_help()
-            continue
-        if action != 'go':
-            print("Invalid input. Please type 'go' to start, 'help' for more info, or 'exit' to quit.")
-            continue
+        print("\nChoose an option:")
+        print("1: Search by name or scent note")
+        print("2: Get image and description for a fragrance")
+        print("3: Compare two fragrances")
+        print("4: Get a fragrance reccomendation for a specific season")
+        print("5: Exit the program")
 
-        while True:
-            search_type = input("\nType '1' to search by note, '2' for name, or type 'exit' to quit): ").strip().lower()
-            if search_type == 'exit':
-                print("Thank you for using the perfume recommendation program!")
-                return
+        choice = input("Enter your choice: ").strip()
 
-            if search_type == '2':
-                perfume_name = input("Enter the perfume name (or type 'back' to go to main menu): ")
-                if perfume_name.lower() == 'back':
-                    break
-                matching_fragrances = get_fragrance_by_name(fragrances, perfume_name)
-            elif search_type == '1':
-                note_option = input("Enter a scent note to see available options (or type 'back' to go to main menu): ").strip().lower()
-                if note_option == 'back':
-                    break
-                matching_fragrances = get_fragrance_by_note(fragrances, note_option)
+        if choice == "1":
+            search_type = input("Search by (1) Name or (2) Scent Note: ").strip()
+            if search_type == "1":
+                search_query = input("Enter fragrance name: ").strip()
+                results = search_service(search_query, "name")
+            elif search_type == "2":
+                search_query = input("Enter scent note: ").strip()
+                results = search_service(search_query, "note")
             else:
-                print("Invalid input. Please type '1' for note, or '2' for name.")
+                print("Invalid choice! Please try again.")
                 continue
 
-            if matching_fragrances:
-                for i in range(0, len(matching_fragrances), 5):
-                    batch = matching_fragrances[i:i + 5]
-                    for selected_fragrance in batch:
-                        display_fragrance(selected_fragrance)
-                    if i + 5 < len(matching_fragrances):
-                        more = input("Do you want to see more results? (yes/no or type 'back' to main menu): ").strip().lower()
-                        if more == 'back':
+            if results:
+                print(f"\nFound {len(results)} matching fragrance(s):")
+
+                batch_size = 5
+                start_index = 0
+
+                while start_index < len(results):
+                    for i in range(start_index, min(start_index + batch_size, len(results))):
+                        print(f"- {results[i][0]} by {results[i][1]} (Notes: {results[i][2]})")
+                    
+                    start_index += batch_size
+                    if start_index < len(results):
+                        user_input = input("\nWould you like to see more results? (yes/no): ").strip().lower()
+                        if user_input != "yes":
+                            print("Ending search")
                             break
-                        elif more != 'yes':
-                            break
-                else:
-                    print("No more results to display.")
             else:
-                print("No fragrances found with that input. Please try again.")
+                print(f"No results found for your query: '{search_query}'.")
 
-            look_again = input("Do you want to look up another perfume? (yes/no): ").strip().lower()
-            if look_again != 'yes':
-                print("Thank you for using the perfume recommendation program!")
-                return
+        elif choice == "2":
+            fragrance_name = input("Enter fragrance name to get details: ").strip()
+            image_desc = image_desc_service(fragrance_name)
+            if image_desc:
+                print(f"\nImage: {image_desc[0][1]}")
+                print(f"Description: {image_desc[0][2]}")
+            else:
+                print(f"No image or description found for '{fragrance_name}'.")
 
+        elif choice == "3":
+            name1 = input("Enter first fragrance name: ").strip()
+            name2 = input("Enter second fragrance name: ").strip()
+            comparison_result = compare_service(name1, name2)
+            if comparison_result:
+                print(f"\nComparison result: {comparison_result[0]}")
+            else:
+                print("No comparison data found for the given fragrances.")
+
+        elif choice == "4":
+            season_name = input("Which season would you like to get a fragrance for? (e.g., spring, summer, autumn, winter): ").strip().lower()
+            season_result = season_service(season_name)
+            if season_result:
+                print(f"\nFound {len(season_result)} fragrance(s) for '{season_name}':")
+                for frag in season_result:
+                    print(f"- {frag[0]} by {frag[1]} (Notes: {frag[2]})")
+            else:
+                print(f"No recommendations found for '{season_name}'.")
+
+        elif choice == "5":
+            print("\nExiting the program. Goodbye!")
+            break
+
+        else:
+            print("Invalid choice! Please try again.")
 
 if __name__ == "__main__":
     main()
